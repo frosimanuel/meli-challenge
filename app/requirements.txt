@@ -1,0 +1,16 @@
+bcrypt==4.1.2
+certifi==2024.2.2
+charset-normalizer==3.3.2
+crypto==1.4.1
+elastic-transport==8.13.0
+elasticsearch==8.13.0
+idna==3.7
+mysql-connector-python==8.3.0
+Naked==0.1.32
+pycryptodome==3.20.0
+python-dotenv==1.0.1
+PyYAML==6.0.1
+requests==2.31.0
+scrypt==0.8.24
+shellescape==3.8.1
+urllib3==2.2.1
