@@ -1,4 +1,65 @@
 
+# Meli Challenge – Secure User Data Ingestion and Encryption App
+
+## Overview
+
+This application is designed to securely ingest, encrypt, store, and retrieve user data, with a strong emphasis on protecting sensitive information such as credit card numbers, CCVs, and bank account numbers. The app leverages Python, Docker, Elasticsearch, and Kibana, and implements robust cryptographic techniques to ensure data confidentiality and integrity.
+
+## Technical Architecture
+
+### Main Components
+
+- **Python Application** (in `app/`): Handles data ingestion, encryption/decryption, and communication with Elasticsearch.
+- **Elasticsearch**: Stores user records, including encrypted sensitive fields.
+- **Kibana**: Provides a UI for querying and visualizing user data (excluding sensitive fields, which remain encrypted).
+- **Docker**: Used to orchestrate the Python app, Elasticsearch, and Kibana for reproducible, isolated deployments.
+
+### Core Workflow
+
+1. **Data Ingestion**:
+   - The app fetches user data from an external API (URL specified in `.env`).
+   - Dates are normalized for consistency.
+
+2. **Encryption Process**:
+   - For each user, a Data Encryption Key (DEK) is generated.
+   - Sensitive fields (`credit_card_num`, `credit_card_ccv`, `cuenta_numero`) are encrypted using AES-256 in EAX mode with the DEK.
+   - Encrypted data, along with associated tags and nonces, are Base64-encoded for storage.
+   - A Key Encryption Key (KEK) is derived using the user's username concatenated with a master key (environment variable) and a random salt, via the scrypt KDF.
+   - The DEK is encrypted with the KEK, and all components (encrypted data, encrypted DEK, tags, nonces, salts) are stored in Elasticsearch.
+
+3. **Data Storage**:
+   - All user records, with encrypted sensitive fields, are indexed in Elasticsearch under the `user` index.
+
+4. **Data Retrieval & Decryption**:
+   - To access sensitive data, the app requires the correct `MASTER_KEY` environment variable.
+   - The app retrieves the encrypted DEK and decrypts it using the KEK (derived as above).
+   - It then uses the DEK to decrypt sensitive fields and reconstruct the original user data.
+   - If the `MASTER_KEY` is missing or incorrect, decryption fails, ensuring data remains protected.
+
+5. **Kibana Integration**:
+   - Kibana is used for querying and visualizing user data. Sensitive fields remain encrypted and are not directly visible.
+
+### Security Features
+
+- **Field-level Encryption**: Only sensitive fields are encrypted, allowing non-sensitive data to be queried and analyzed without risk.
+- **Per-user Encryption Keys**: Each user's sensitive data is encrypted with a unique DEK, itself encrypted with a KEK derived from a master key and username.
+- **Environment-based Master Key**: The master key is never stored in code or in the database, only as an environment variable, and should be securely managed.
+- **Hashing Option for CCV**: The app includes functions to hash and verify the CCV field, supporting best practices for storing non-reversible secrets.
+
+### Additional Documentation
+
+- `docs/Encryption and Decryption.md`: Deep dive into the cryptographic approach.
+- `docs/Input Data.md`: Describes the structure and source of the input data.
+- `docs/Analisis de riesgo.md`: Risk analysis for the solution.
+- `docs/Suposiciones.md`: Assumptions made during development.
+
+### Running the App
+
+- The app is containerized; see below for Docker usage and environment setup.
+- Data can be ingested and encrypted via the Python CLI (`main.py`), and decrypted only with the correct master key.
+
+---
+
 ### Preparations
 
 Clone all the contents, make sure to have docker and docker compose installed, in my case i have `Docker version 26.0.1`
@@ -59,4 +120,3 @@ for running python locally
 ```bash
 sudo cp /var/lib/docker/volumes/test_certs/_data/ca/ca.crt ./ca.crt
 ```
-
